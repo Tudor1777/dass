@@ -2,7 +2,7 @@ from flask import Flask, request, render_template, session, redirect
 import sqlite3
 
 app = Flask(__name__)
-app.secret_key = "123456789"
+app.secret_key = "secret123"  
 
 
 def get_db():
@@ -38,7 +38,7 @@ def register():
     conn.commit()
     conn.close()
 
-    return "User created<br><a href='/login'>Go to login</a>"
+    return "User created"
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -58,11 +58,10 @@ def login():
     conn.close()
 
     if row is None:
-        return "User not found"
+        return "User not found" 
 
     if row[0] != password:
-        return "Wrong password"
-
+        return "Wrong password" 
     session["user"] = username
     return redirect("/dashboard")
 
@@ -70,11 +69,14 @@ def login():
 @app.route("/dashboard")
 def dashboard():
     if "user" not in session:
-        return "Not logged in<br><a href='/login'>Login</a>"
+        return "Not logged in"
 
     return f"""
     <h1>Dashboard</h1>
-    <p>Welcome {session['user']}!</p>
+    <p>Welcome {session['user']}</p>
+    <a href="/create-ticket">Create Ticket</a><br>
+    <a href="/tickets">View Tickets</a><br>
+    <a href="/search">Search</a><br>
     <a href="/logout">Logout</a>
     """
 
@@ -82,7 +84,7 @@ def dashboard():
 @app.route("/logout")
 def logout():
     session.clear()
-    return "Logged out<br><a href='/login'>Login again</a>"
+    return "Logged out"
 
 
 @app.route("/forgot-password", methods=["GET", "POST"])
@@ -92,12 +94,11 @@ def forgot_password():
 
     username = request.form.get("username")
 
-    token = username + "123"
+    token = username + "123"  
 
     return f"""
-    <h2>Reset token generated</h2>
-    <p>Token: {token}</p>
-    <a href="/reset-password?token={token}">Reset Password</a>
+    Token: {token}<br>
+    <a href="/reset-password?token={token}">Reset</a>
     """
 
 
@@ -110,7 +111,7 @@ def reset_password():
     token = request.form.get("token")
     new_password = request.form.get("password")
 
-    username = token.replace("123", "")
+    username = token.replace("123", "")  
 
     conn = get_db()
     cur = conn.cursor()
@@ -123,7 +124,115 @@ def reset_password():
     conn.commit()
     conn.close()
 
-    return "Password reset successful<br><a href='/login'>Go to login</a>"
+    return "Password reset successful"
+
+
+@app.route("/create-ticket", methods=["GET", "POST"])
+def create_ticket():
+    if "user" not in session:
+        return "Not logged in"
+
+    if request.method == "GET":
+        return render_template("create_ticket.html")
+
+    title = request.form.get("title")
+    description = request.form.get("description")
+    status = request.form.get("status")
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "INSERT INTO tickets (title, description, status, owner) VALUES (?, ?, ?, ?)",
+        (title, description, status, session["user"])
+    )
+
+    conn.commit()
+    conn.close()
+
+    return "Ticket created"
+
+
+@app.route("/tickets")
+def tickets():
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM tickets")  
+    rows = cur.fetchall()
+
+    conn.close()
+
+    html = "<h1>Tickets</h1>"
+    html += "<a href='/dashboard'>Dashboard</a><br><br>"
+
+    for t in rows:
+        html += f"""
+        <div style="border:1px solid black; margin:10px; padding:10px;">
+            <p><b>ID:</b> {t[0]}</p>
+            <p><b>Title:</b> {t[1]}</p>
+            <p><b>Description:</b> {t[2]}</p>
+            <p><b>Status:</b> {t[3]}</p>
+            <p><b>Owner:</b> {t[4]}</p>
+            <a href="/edit-ticket/{t[0]}">Edit</a> |
+            <a href="/delete-ticket/{t[0]}">Delete</a>
+        </div>
+        """
+
+    return html
+
+
+@app.route("/edit-ticket/<int:id>", methods=["GET", "POST"])
+def edit_ticket(id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    if request.method == "GET":
+        cur.execute("SELECT * FROM tickets WHERE id = ?", (id,))
+        ticket = cur.fetchone()
+        conn.close()
+        return render_template("edit_ticket.html", ticket=ticket)
+
+    title = request.form.get("title")
+
+    cur.execute("UPDATE tickets SET title = ? WHERE id = ?", (title, id))
+    conn.commit()
+    conn.close()
+
+    return "Updated"
+
+
+@app.route("/delete-ticket/<int:id>")
+def delete_ticket(id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("DELETE FROM tickets WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+
+    return "Deleted"
+
+
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    if request.method == "GET":
+        return render_template("search.html")
+
+    query = request.form.get("query")
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM tickets WHERE title LIKE ? OR description LIKE ?",
+        (f"%{query}%", f"%{query}%")
+    )
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return str(rows)
 
 
 if __name__ == "__main__":

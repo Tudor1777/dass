@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>Edit Ticket</h2>
+
+<form method="POST">
+  Title: <input name="title" value="{{ ticket[1] }}"><br>
+  Description: <input name="description" value="{{ ticket[2] }}"><br>
+  Status:
+  <select name="status">
+    <option>OPEN</option>
+    <option>IN_PROGRESS</option>
+    <option>RESOLVED</option>
+  </select><br>
+  <button type="submit">Save</button>
+</form>
+
+</body>
+</html>
