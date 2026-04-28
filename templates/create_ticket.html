@@ -6,12 +6,21 @@
 <form method="POST">
   Title: <input name="title"><br>
   Description: <input name="description"><br>
+
+  Severity:
+  <select name="severity">
+    <option>LOW</option>
+    <option>MED</option>
+    <option>HIGH</option>
+  </select><br>
+
   Status:
   <select name="status">
     <option>OPEN</option>
     <option>IN_PROGRESS</option>
     <option>RESOLVED</option>
   </select><br>
+
   <button type="submit">Create</button>
 </form>
 
