@@ -2,10 +2,15 @@ from flask import Flask, request, render_template, session, redirect
 import sqlite3
 import bcrypt
 import secrets
+import os
 from datetime import datetime, timedelta
+from markupsafe import escape
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key_change_me"
+app.secret_key = os.environ.get("SECRET_KEY")
+
+if not app.secret_key:
+    raise RuntimeError("SECRET_KEY not set")
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
@@ -310,14 +315,14 @@ def tickets():
     for t in rows:
         html += f"""
         <div style="border:1px solid black; margin:10px; padding:10px;">
-            <p><b>ID:</b> {t[0]}</p>
-            <p><b>Title:</b> {t[1]}</p>
-            <p><b>Description:</b> {t[2]}</p>
-            <p><b>Severity:</b> {t[3]}</p>
-            <p><b>Status:</b> {t[4]}</p>
-            <p><b>Owner ID:</b> {t[5]}</p>
-            <a href="/edit-ticket/{t[0]}">Edit</a> |
-            <a href="/delete-ticket/{t[0]}">Delete</a>
+            <p><b>ID:</b> {escape(t[0])}</p>
+            <p><b>Title:</b> {escape(t[1])}</p>
+            <p><b>Description:</b> {escape(t[2])}</p>
+            <p><b>Severity:</b> {escape(t[3])}</p>
+            <p><b>Status:</b> {escape(t[4])}</p>
+            <p><b>Owner ID:</b> {escape(t[5])}</p>
+            <a href="/edit-ticket/{escape(t[0])}">Edit</a> |
+            <a href="/delete-ticket/{escape(t[0])}">Delete</a>
         </div>
         """
 
@@ -432,12 +437,12 @@ def search():
     for t in rows:
         html += f"""
         <div style="border:1px solid black; margin:10px; padding:10px;">
-            <p><b>ID:</b> {t[0]}</p>
-            <p><b>Title:</b> {t[1]}</p>
-            <p><b>Description:</b> {t[2]}</p>
-            <p><b>Severity:</b> {t[3]}</p>
-            <p><b>Status:</b> {t[4]}</p>
-            <p><b>Owner ID:</b> {t[5]}</p>
+            <p><b>ID:</b> {escape(t[0])}</p>
+            <p><b>Title:</b> {escape(t[1])}</p>
+            <p><b>Description:</b> {escape(t[2])}</p>
+            <p><b>Severity:</b> {escape(t[3])}</p>
+            <p><b>Status:</b> {escape(t[4])}</p>
+            <p><b>Owner ID:</b> {escape(t[5])}</p>
         </div>
         """
 
